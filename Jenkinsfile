@@ -13,11 +13,12 @@ pipeline {
             }
         }
 
+        // Updated for Windows Jenkins  
         stage('Build Image') {
             steps {
                 script {
-                    // Uses your multi-stage Dockerfile to build a slim image
-                    sh "docker build -t ${DOCKER_IMAGE}:${env.BUILD_ID} ."
+                // Use 'bat' instead of 'sh' for Windows
+                bat "docker build -t ${DOCKER_IMAGE}:%BUILD_ID% ."
                 }
             }
         }
