@@ -1,0 +1,3 @@
+exit
+db.users.find()
+use my_db
