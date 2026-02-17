@@ -27,7 +27,7 @@ pipeline {
             steps {
                 script {
                     // Check if the image exists and run a basic health check
-                    bat "docker images | grep ${DOCKER_IMAGE}"
+                    sh "docker images | grep ${DOCKER_IMAGE}"
                 }
             }
         }
