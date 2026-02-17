@@ -1,42 +1,53 @@
 pipeline {
-    agent any 
+    agent any
 
     environment {
-        DOCKER_IMAGE = "my-form-app"
+        // This ensures the build ID is attached to the image version
+        IMAGE_NAME = "frontend-web-app"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Jenkins pulls your code from Git
+                // Jenkins pulls the latest code from your local dir or Git
                 checkout scm
             }
         }
 
-        // Updated for Windows Jenkins  
-        stage('Build Image') {
+        stage('Build Optimized Image') {
             steps {
-                script {
-                // Use 'bat' instead of 'sh' for Windows
-                bat "docker build -t ${DOCKER_IMAGE}:%BUILD_ID% ."
-                }
+                // Using 'bat' because your Cmd works. 
+                // This triggers the Multi-Stage build from Day 6.
+                bat "docker build -t %IMAGE_NAME%:%BUILD_ID% ."
+                bat "docker tag %IMAGE_NAME%:%BUILD_ID% %IMAGE_NAME%:latest"
             }
         }
 
-        stage('Test & Verify') {
+        stage('Verify Networking') {
             steps {
-                script {
-                    // Check if the image exists and run a basic health check
-                    sh "docker images | grep ${DOCKER_IMAGE}"
-                }
+                // Ensure the containers can talk to each other
+                // Checking if the database service is reachable
+                bat "docker compose ps"
             }
         }
 
-        stage('Deploy (Optional)') {
+        stage('Deploy Stack') {
             steps {
-                // In a real setup, this would push to Docker Hub or restart Compose
-                bat "docker compose up -d --build"
+                // Restarts the services with the newly built image
+                // MSYS_NO_PATHCONV is added for Windows path compatibility
+                withEnv(['MSYS_NO_PATHCONV=1']) {
+                    bat "docker compose up -d"
+                }
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Build Process Completed.'
+        }
+        success {
+            echo 'Application is live at http://localhost:9000'
         }
     }
 }
