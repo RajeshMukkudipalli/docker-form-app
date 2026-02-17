@@ -4,6 +4,7 @@ pipeline {
     environment {
         // This ensures the build ID is attached to the image version
         IMAGE_NAME = "frontend-web-app"
+        DOCKER_BIN = 'C:\\Program Files\\Docker\\Docker\\resources\\bin'
     }
 
     stages {
@@ -18,8 +19,8 @@ pipeline {
             steps {
                 // Using 'bat' because your Cmd works. 
                 // This triggers the Multi-Stage build from Day 6.
-                bat "docker build -t %IMAGE_NAME%:%BUILD_ID% ."
-                bat "docker tag %IMAGE_NAME%:%BUILD_ID% %IMAGE_NAME%:latest"
+                
+                bat "\"${env.DOCKER_BIN}\\docker.exe\" build -t frontend-web-app ."
             }
         }
 
@@ -27,7 +28,7 @@ pipeline {
             steps {
                 // Ensure the containers can talk to each other
                 // Checking if the database service is reachable
-                bat "docker compose ps"
+                bat "\"${env.DOCKER_BIN}\\docker-compose.exe\" up -d --force-recreate"
             }
         }
 
