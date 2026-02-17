@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  web-app:
+    build: .
+    ports:
+      - "9000:3000"
+    environment:
+      - MONGO_URI=mongodb://database:27017/my_db
+    depends_on:
+      - database
+
+  database:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-ui
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=database
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
+      - MSYS_NO_PATHCONV=1
+      - ME_CONFIG_BASICAUTH_USERNAME=rajesh
+      - ME_CONFIG_BASICAUTH_PASSWORD=docker123
+    depends_on:
+      - database
+
+volumes:
+  mongo-data:
