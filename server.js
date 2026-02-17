@@ -1,34 +1,63 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const client = require('prom-client'); // Senior DevOps: Monitoring library
+
 const app = express();
+const port = 3000;
+
+// --- PROMETHEUS METRICS SETUP ---
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+// Custom metric to track user submissions
+const userCounter = new client.Counter({
+  name: 'app_user_submissions_total',
+  help: 'Total number of users submitted through the form'
+});
+register.registerMetric(userCounter);
+
+// Endpoint for Prometheus to scrape
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+// --------------------------------
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-// Uses the environment variable from docker-compose, or defaults to userDB
-const mongoURI = process.env.MONGO_URI || 'mongodb://database:27017/userDB';
-
-mongoose.connect(mongoURI)
-    .then(() => console.log('Connected to MongoDB successfully'))
-    .catch(err => console.error('MongoDB connection error:', err));
+// MongoDB connection using environment variable
+const mongoUri = process.env.MONGO_URI || 'mongodb://database:27017/my_db';
+mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('Could not connect to MongoDB', err));
 
 const userSchema = new mongoose.Schema({
-    username: String,
-    date: { type: Date, default: Date.now }
+  name: String,
+  date: { type: Date, default: Date.now }
 });
+
 const User = mongoose.model('User', userSchema);
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-
-// Route to handle form submissions
-app.post('/submit', async (req, res) => {
-    try {
-        const newUser = new User({ username: req.body.username });
-        await newUser.save();
-        res.send('Data Saved to MongoDB! <a href="/">Go Back</a>');
-    } catch (err) {
-        res.status(500).send('Error saving data');
-    }
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(3000, '0.0.0.0', () => console.log('Server running on port 3000'));
+app.post('/submit', async (req, res) => {
+  try {
+    const newUser = new User({ name: req.body.username });
+    await newUser.save();
+    
+    // Increment the Prometheus counter on every successful save
+    userCounter.inc(); 
+    
+    res.send('User saved successfully!');
+  } catch (error) {
+    res.status(500).send('Error saving data');
+  }
+});
+
+app.listen(port, () => {
+  console.log(`App listening at http://localhost:${port}`);
+});
