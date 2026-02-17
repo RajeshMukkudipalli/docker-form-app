@@ -23,7 +23,7 @@ services:
     build: .
     container_name: node-app
     environment:
-      - MONGO_URI=mongodb://database:27017/my_db
+      - MONGO_URI=mongodb://mongodb-server:27017/my_db
     depends_on:
       - database
     networks:
