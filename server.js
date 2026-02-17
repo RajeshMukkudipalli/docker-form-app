@@ -28,8 +28,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // MongoDB connection using environment variable
+// DevOps Note: Hostname 'database' must match the service name in docker-compose.yaml
 const mongoUri = process.env.MONGO_URI || 'mongodb://database:27017/my_db';
-mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+
+// FIX: Removed 'useNewUrlParser' and 'useUnifiedTopology' as they are no longer supported 
+// in newer Mongoose versions and were causing your crash
+mongoose.connect(mongoUri)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Could not connect to MongoDB', err));
 
@@ -54,6 +58,8 @@ app.post('/submit', async (req, res) => {
     
     res.send('User saved successfully!');
   } catch (error) {
+    // This block triggers the "Error saving data" message you see in the browser
+    console.error("Submission Error:", error);
     res.status(500).send('Error saving data');
   }
 });
