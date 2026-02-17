@@ -1,9 +1,6 @@
 version: '3.8'
-networks:
-  app-network:
-    driver: bridge
-
 services:
+  # Gateway: Only this is accessible from your browser
   nginx-proxy:
     image: nginx:latest
     ports:
@@ -14,43 +11,42 @@ services:
       - web-app
     networks:
       - app-network
+
+  # Application: Now hidden from direct public access
   web-app:
     build: .
-    
     environment:
-      # Matches the database name we found in your logs
       - MONGO_URI=mongodb://database:27017/my_db
     depends_on:
       - database
     networks:
       - app-network
 
+  # Database: Securely stored on your D: drive
   database:
     image: mongo:latest
     container_name: mongodb-server
-    ports:
-      - "27017:27017"
     volumes:
-      # This creates a folder on your D: drive to store data permanently
       - D:/hello-docker/frontend/mongo-data:/data/db
     networks:
-        - app-network
-  
-    
-
+      - app-network
   mongo-express:
     image: mongo-express:latest
     container_name: mongo-ui
     ports:
-      - "8081:8081"
+      - "8081:8081" # Keep this port so you can access it directly
     environment:
-      - ME_CONFIG_MONGODB_SERVER=database
+      - ME_CONFIG_MONGODB_SERVER=database # Must match the service name above
       - ME_CONFIG_MONGODB_PORT=27017
       - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
       - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
-      - MSYS_NO_PATHCONV=1
       - ME_CONFIG_BASICAUTH_USERNAME=rajesh
       - ME_CONFIG_BASICAUTH_PASSWORD=docker123
     depends_on:
       - database
-    
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

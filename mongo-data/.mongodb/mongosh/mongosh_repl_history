@@ -1,3 +1,10 @@
 exit
 db.users.find()
 use my_db
+exit
+db.users.find()
+db.find.user()
+use my_db()
+exit
+db.users.find()
+use my_db
