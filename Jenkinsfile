@@ -35,7 +35,7 @@ pipeline {
         stage('Deploy (Optional)') {
             steps {
                 // In a real setup, this would push to Docker Hub or restart Compose
-                sh "docker compose up -d --build"
+                bat "docker compose up -d --build"
             }
         }
     }
