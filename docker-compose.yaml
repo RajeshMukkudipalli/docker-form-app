@@ -1,8 +1,10 @@
 version: '3.8'
+
 services:
-  # Gateway: Only this is accessible from your browser
+  # 1. GATEWAY (Nginx with SSL)
   nginx-proxy:
     image: nginx:latest
+    container_name: nginx-gateway
     ports:
       - "80:80"
       - "443:443"
@@ -13,19 +15,22 @@ services:
     depends_on:
       - web-app
     networks:
+      - monitoring-network
       - app-network
 
-  # Application: Now hidden from direct public access
+  # 2. APPLICATION (Node.js)
   web-app:
     build: .
+    container_name: node-app
     environment:
       - MONGO_URI=mongodb://database:27017/my_db
     depends_on:
       - database
     networks:
+      - monitoring-network
       - app-network
 
-  # Database: Securely stored on your D: drive
+  # 3. DATABASE (MongoDB)
   database:
     image: mongo:latest
     container_name: mongodb-server
@@ -33,16 +38,15 @@ services:
       - D:/hello-docker/frontend/mongo-data:/data/db
     networks:
       - app-network
+
+  # 4. DATABASE UI
   mongo-express:
     image: mongo-express:latest
     container_name: mongo-ui
     ports:
-      - "8081:8081" # Keep this port so you can access it directly
+      - "8081:8081"
     environment:
-      - ME_CONFIG_MONGODB_SERVER=database # Must match the service name above
-      - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
-      - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
+      - ME_CONFIG_MONGODB_SERVER=database
       - ME_CONFIG_BASICAUTH_USERNAME=rajesh
       - ME_CONFIG_BASICAUTH_PASSWORD=docker123
     depends_on:
@@ -50,6 +54,30 @@ services:
     networks:
       - app-network
 
+  # 5. MONITORING: Prometheus (Metrics Collector)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring-network
+
+  # 6. VISUALIZATION: Grafana (The Dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - monitoring-network
+
 networks:
   app-network:
+    driver: bridge
+  monitoring-network:
     driver: bridge
