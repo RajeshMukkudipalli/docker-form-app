@@ -5,24 +5,22 @@ const app = express();
 
 app.use(express.urlencoded({ extended: true }));
 
-// 1. Connection Logic - Using the service name 'database' from docker-compose
-// Change this line in server.js
-const mongoURI = process.env.MONGO_URI || 'mongodb://database:27017/my_db';
+// Uses the environment variable from docker-compose, or defaults to userDB
+const mongoURI = process.env.MONGO_URI || 'mongodb://database:27017/userDB';
 
 mongoose.connect(mongoURI)
     .then(() => console.log('Connected to MongoDB successfully'))
     .catch(err => console.error('MongoDB connection error:', err));
 
-// 2. Define a Schema (How the data looks)
 const userSchema = new mongoose.Schema({
     username: String,
     date: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
 
-// 3. Routes
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
+// Route to handle form submissions
 app.post('/submit', async (req, res) => {
     try {
         const newUser = new User({ username: req.body.username });
