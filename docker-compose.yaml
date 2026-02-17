@@ -17,7 +17,7 @@ services:
       - "27017:27017"
     volumes:
       # This creates a folder on your D: drive to store data permanently
-      - ./mongo-data:/data/db
+      - D:/hello-docker/frontend/mongo-data:/data/db
 
   mongo-express:
     image: mongo-express:latest
